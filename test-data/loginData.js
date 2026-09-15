@@ -6,14 +6,14 @@ export const loginData = {
 
   // Cấu trúc response status 200
   successResponse: {
-    status: HTTP_STATUS_CODE.UNPROCESSABLE_ENTITY,
+    status: HTTP_STATUS_CODE.OK,
     contentType: CONTENT_TYPE.JSON,
     body: {
       access_token: "string",
       refresh_token: "string",
       firebase_access_token: "string",
       is_agency: "boolean",
-    }
+    },
   },
 
   // Cấu trúc response status 401 - Authentication Failed
@@ -22,7 +22,8 @@ export const loginData = {
       status: HTTP_STATUS_CODE.UNAUTHORIZED,
       contentType: CONTENT_TYPE.JSON,
       body: {
-        detail: "メールアドレス・IDまたはパスワードが一致しません。もう一度入力してください。",
+        detail:
+          "メールアドレス・IDまたはパスワードが一致しません。もう一度入力してください。",
       },
     },
 
@@ -52,19 +53,16 @@ export const loginData = {
     fieldRequired: (field) => ({
       status: HTTP_STATUS_CODE.UNPROCESSABLE_ENTITY,
       contentType: CONTENT_TYPE.JSON,
-      body: {
-        detail: [
-          {
-            type: "missing",
-            loc: ["body", field],
-            msg: "Field required",
-          },
-        ],
-      }
+      detail: [
+        {
+          type: "missing",
+          loc: ["body", field],
+          msg: "Field required",
+        },
+      ],
     }),
-  }
-}
-
+  },
+};
 
 // Data Test với Incorrect Content-Type
 export const invalidContentTypePayloads = [
@@ -84,3 +82,63 @@ export const invalidContentTypePayloads = [
     payload: `<xml><email>${loginData.email_user_id}</email><password>${loginData.password}</password></xml>`,
   },
 ];
+
+export const headerTestCases = [
+  { title: "No header", headers: {}, expectedStatus: HTTP_STATUS_CODE.OK },
+  {
+    title: "Empty header",
+    headers: { accept: "", "Content-Type": "" },
+    expectedStatus: HTTP_STATUS_CODE.OK,
+  },
+  {
+    title: "No Accept header",
+    headers: {},
+    expectedStatus: HTTP_STATUS_CODE.OK,
+  },
+  {
+    title: "Empty Accept header",
+    headers: { accept: "" },
+    expectedStatus: HTTP_STATUS_CODE.OK,
+  },
+  {
+    title: "Invalid Accept header",
+    headers: { accept: "text/html" },
+    expectedStatus: HTTP_STATUS_CODE.OK,
+  },
+  {
+    title: "No Content-Type header",
+    headers: {},
+    expectedStatus: HTTP_STATUS_CODE.OK,
+  },
+  {
+    title: "Empty Content-Type header",
+    headers: { "Content-Type": "" },
+    expectedStatus: HTTP_STATUS_CODE.OK,
+  },
+  {
+    title: "Invalid Content-Type header",
+    headers: { "Content-Type": "text/plain" },
+    expectedStatus: HTTP_STATUS_CODE.UNPROCESSABLE_ENTITY,
+    checkErrorBody: true, // Cờ tùy chọn để assert body lỗi 422
+  },
+];
+// export const missingFieldCases = [
+//   {
+//     field: "email_user_id",
+//     title: "Missing email field",
+//     expectedStatus: HTTP_STATUS_CODE.UNPROCESSABLE_ENTITY,
+//     isOptional: false,
+//   },
+//   {
+//     field: "password",
+//     title: "Missing password field",
+//     expectedStatus: HTTP_STATUS_CODE.UNPROCESSABLE_ENTITY,
+//     isOptional: false,
+//   },
+//   {
+//     field: "login_type",
+//     title: "Missing login type field",
+//     expectedStatus: HTTP_STATUS_CODE.OK,
+//     isOptional: true,
+//   },
+// ];
