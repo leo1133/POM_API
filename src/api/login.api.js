@@ -16,8 +16,16 @@ export class AuthAPI extends BaseAPI {
    * @param {Object} [customHeaders] - Header tùy chỉnh (nếu có)
    */
   async login(payload, customHeaders) {
-    const headers =
-      customHeaders !== undefined ? customHeaders : this.getHeaders();
+
+    // 1. Lấy headers mặc định từ BaseAPI
+    const defaultHeaders = this.getHeaders();
+
+    // 2. Gộp defaultHeaders và customHeaders (customHeaders sẽ đè lên nếu trùng tên key)
+    const headers = customHeaders !== undefined
+      ? { ...defaultHeaders, ...customHeaders }
+      : defaultHeaders;
+    // const headers =
+    //   customHeaders !== undefined ? customHeaders : this.getHeaders();
     return await this.post(this.loginEndpoint, payload, headers);
   }
 

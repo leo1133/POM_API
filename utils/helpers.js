@@ -42,7 +42,7 @@ const generateRandomEmail = (
   const randomLength = Math.floor(Math.random() * length) + 1;
 
   // 2. Generate prefix contains numbers and special characters
-  const prefix = generateRandomString(randomLength, true, true);
+  const prefix = generateRandomString(randomLength, true, false);
 
   if (isValid) {
     // 2. Domain and Extension only contain letters
@@ -60,6 +60,9 @@ const generateRandomEmail = (
     }
 
     return `${prefix}@${randomDomain}.${randomExtension}`;
+
+    // return `${prefix}@gmail.com`;
+
   }
 
   return prefix;

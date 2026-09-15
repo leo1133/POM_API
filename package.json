@@ -3,7 +3,15 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-  "scripts": {},
+  "scripts": {
+    "codegen:dev": "ENV=dev npx playwright codegen https://suriaru:suriaru@admin-dev.surrealdolls.com/sign-in",
+    "codegen:stg": "ENV=staging npx playwright codegen https://suriaru:suriaru@admin-stg.surrealdolls.com/sign-in",
+    "test:dev": "ENV=dev npx playwright test",
+    "test:stg": "ENV=staging npx playwright test",
+    "test:ui:dev": "ENV=dev npx playwright test --ui",
+    "test:ui:stg": "ENV=staging npx playwright test --ui",
+    "report": "npx playwright show-report"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",

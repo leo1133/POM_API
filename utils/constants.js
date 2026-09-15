@@ -30,6 +30,14 @@ const HTTP_STATUS_CODE = {
   METHOD_NOT_ALLOWED: 405,
   UNPROCESSABLE_ENTITY: 422,
 };
+
+const CONTENT_TYPE = {
+  JSON: "application/json",
+  URL_ENCODED: "application/x-www-form-urlencoded",
+  TEXT_PLAIN: "text/plain",
+  XML: "application/xml",
+
+}
 export {
   CHARACTERS_LETTERS,
   CHARACTERS_NUMBERS,
@@ -44,4 +52,5 @@ export {
   LENGTH_MAX_PASSWORD,
   METHODS,
   HTTP_STATUS_CODE,
+  CONTENT_TYPE,
 };
