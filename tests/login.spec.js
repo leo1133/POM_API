@@ -8,18 +8,18 @@ import {
   invalidContentTypePayloads,
   headerTestCases,
   missingFieldCases,
+  invalidValueCases,
 } from "../test-data/loginData.js";
 import {
   generateRandomString,
   generateRandomEmail,
   generateOtherMethodNotChoose,
 } from "../utils/helpers.js";
-import { METHODS } from "../utils/constants.js";
+import { METHODS, HTTP_STATUS_CODE } from "../utils/constants.js";
 
 test.describe("API Auth Login Suite", () => {
   let authApi;
 
-  // Khởi tạo AuthAPI 1 lần duy nhất cho tất cả các test case
   test.beforeEach(async ({ unauthenticatedRequest }) => {
     authApi = new AuthAPI(unauthenticatedRequest);
   });
@@ -28,74 +28,56 @@ test.describe("API Auth Login Suite", () => {
   // 1. HAPPY PATH & AUTHENTICATION ERRORS
   // ------------------------------------------------------------------
   test("Case 1: Login successfully", async () => {
-    const response = await authApi.login(loginData);
+    const response = await authApi.login(loginData.credentials);
+    const { status, contentType, body: expectedBody } = loginData.expectedResponses.success;
 
-    expect(response.status()).toBe(loginData.successResponse.status);
-    expect(response.headers()["content-type"]).toContain(
-      loginData.successResponse.contentType,
-    );
+    expect(response.status()).toBe(status);
+    expect(response.headers()["content-type"]).toContain(contentType);
+
     const body = await response.json();
 
     expect(body.access_token).toBeDefined();
-    expect(typeof body.access_token).toBe(
-      loginData.successResponse.body.access_token,
-    );
+    expect(typeof body.access_token).toBe(expectedBody.access_token);
     expect(body.access_token).not.toBe("");
 
     expect(body.refresh_token).toBeDefined();
-    expect(typeof body.refresh_token).toBe(
-      loginData.successResponse.body.refresh_token,
-    );
+    expect(typeof body.refresh_token).toBe(expectedBody.refresh_token);
     expect(body.refresh_token).not.toBe("");
 
     expect(body.firebase_access_token).toBeDefined();
-    expect(typeof body.firebase_access_token).toBe(
-      loginData.successResponse.body.firebase_access_token,
-    );
+    expect(typeof body.firebase_access_token).toBe(expectedBody.firebase_access_token);
     expect(body.firebase_access_token).not.toBe("");
 
-    expect(typeof body.is_agency).toBe(
-      loginData.successResponse.body.is_agency,
-    );
+    expect(typeof body.is_agency).toBe(expectedBody.is_agency);
     expect(body.is_agency).toBe(false);
   });
 
   test("Case 2: Login failed with wrong password", async () => {
     const response = await authApi.login({
-      ...loginData,
+      ...loginData.credentials,
       password: generateRandomString(10, true, true),
     });
 
-    // 1. Check HTTP Status Code
-    expect(response.status()).toBe(
-      loginData.expectedResponses.unauthorized.status,
-    );
-    // 2. Check Content-Type Header
-    expect(response.headers()["content-type"]).toContain(
-      loginData.expectedResponses.unauthorized.contentType,
-    );
-    // 3. Check Response Body Structure and Data
+    const { status, contentType, body: expectedBody } = loginData.expectedResponses.unauthorized;
+    expect(response.status()).toBe(status);
+    expect(response.headers()["content-type"]).toContain(contentType);
+
     const body = await response.json();
-    expect(body).toEqual(loginData.expectedResponses.unauthorized.body);
+    expect(body).toEqual(expectedBody);
   });
 
   test("Case 3: Login failed with wrong account", async () => {
     const response = await authApi.login({
-      ...loginData,
+      ...loginData.credentials,
       email_user_id: generateRandomEmail(true),
     });
 
-    // 1. Check HTTP Status Code
-    expect(response.status()).toBe(
-      loginData.expectedResponses.unauthorized.status,
-    );
-    // 2. Check Content-Type Header
-    expect(response.headers()["content-type"]).toContain(
-      loginData.expectedResponses.unauthorized.contentType,
-    );
-    // 3. Check Response Body Structure and Data
+    const { status, contentType, body: expectedBody } = loginData.expectedResponses.unauthorized;
+    expect(response.status()).toBe(status);
+    expect(response.headers()["content-type"]).toContain(contentType);
+
     const body = await response.json();
-    expect(body).toEqual(loginData.expectedResponses.unauthorized.body);
+    expect(body).toEqual(expectedBody);
   });
 
   // ------------------------------------------------------------------
@@ -106,45 +88,35 @@ test.describe("API Auth Login Suite", () => {
   invalidMethods.forEach((method, index) => {
     test(`Case ${index + 4}: Login failed with ${method} method`, async () => {
       const response = await authApi.loginWithMethod(method);
+      const { status, contentType, body: expectedBody } = loginData.expectedResponses.invalidMethod;
 
-      expect(response.status()).toBe(
-        loginData.expectedResponses.invalidMethod.status,
-      );
-      expect(response.headers()["content-type"]).toContain(
-        loginData.expectedResponses.invalidMethod.contentType,
-      );
+      expect(response.status()).toBe(status);
+      expect(response.headers()["content-type"]).toContain(contentType);
 
       const body = await response.json();
-      expect(body).toHaveProperty("detail");
-      // Fix: Access detail from expectedResponses instead of the undefined invalidData property
-      expect(body.detail).toBe(
-        loginData.expectedResponses.invalidMethod.body.detail,
-      );
+      expect(body.detail).toBe(expectedBody.detail);
     });
   });
 
   // ------------------------------------------------------------------
   // 3. HEADER TESTING
   // ------------------------------------------------------------------
-
   headerTestCases.forEach(
     ({ title, headers, expectedStatus, checkErrorBody }, index) => {
-      const caseId = index + 8; // Tự động đánh số từ Case 8
+      const caseId = index + 8;
 
       test(`Case ${caseId}: Login - ${title}`, async () => {
-        const response = await authApi.login(loginData, headers);
+        const response = await authApi.login(loginData.credentials, headers);
 
-        // 1. Check HTTP Status
         expect(response.status()).toBe(expectedStatus);
 
-        // 2. Check Response Body cho các case lỗi 422 (nếu có)
         if (checkErrorBody) {
           await expect(response.json()).resolves.toMatchObject({
             detail: loginData.expectedResponses.invalidBodyFormat.detail,
           });
         }
       });
-    },
+    }
   );
 
   // ------------------------------------------------------------------
@@ -156,15 +128,11 @@ test.describe("API Auth Login Suite", () => {
         "Content-Type": type,
       });
 
-      // 1. Check Status Code & Header
-      expect(response.status()).toBe(
-        loginData.expectedResponses.invalidBodyFormat.status,
-      );
-      expect(response.headers()["content-type"]).toContain(
-        loginData.expectedResponses.invalidBodyFormat.contentType,
-      );
+      const { status, contentType } = loginData.expectedResponses.invalidBodyFormat;
 
-      // 2. Check Response Body Structure
+      expect(response.status()).toBe(status);
+      expect(response.headers()["content-type"]).toContain(contentType);
+
       const body = await response.json();
       expect(body).toHaveProperty("detail");
     });
@@ -173,42 +141,56 @@ test.describe("API Auth Login Suite", () => {
   // ------------------------------------------------------------------
   // 5. MISSING FIELD VALIDATIONS
   // ------------------------------------------------------------------
-  // test("Case 19: Missing all fields", async () => {
-  //   const response = await authApi.login({});
+  test("Case 19: Missing all fields", async () => {
+    const response = await authApi.login({});
+    const { status, detail } = loginData.expectedResponses.missingAllFields;
 
-  //   expect(response.status()).toBe(
-  //     loginData.expectedResponses.invalidBodyFormat.status,
-  //   );
-  //   await expect(response.json()).resolves.toMatchObject({
-  //     detail: [
-  //       loginData.expectedResponses.fieldRequired("email_user_id").detail[0],
-  //       loginData.expectedResponses.fieldRequired("password").detail[0],
-  //     ],
-  //   });
-  // });
+    expect(response.status()).toBe(status);
 
-  // missingFieldCases.forEach(
-  //   ({ field, title, expectedStatus, isOptional }, index) => {
-  //     const caseId = index + 20; // Tự động đánh số thứ tự từ Case 20
+    const body = await response.json();
+    expect(body.detail).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining(detail[0]),
+        expect.objectContaining(detail[1]),
+      ])
+    );
+  });
 
-  //     test(`Case ${caseId}: ${title}`, async () => {
-  //       // Tách trường 'field' ra khỏi loginData
-  //       const { [field]: omitted, ...payloadWithoutField } = loginData;
+  missingFieldCases.forEach(
+    ({ field, title, expectedStatus, isOptional }, index) => {
+      const caseId = index + 20;
 
-  //       const response = await authApi.login(payloadWithoutField);
+      test(`Case ${caseId}: ${title}`, async () => {
+        const { [field]: omitted, ...payloadWithoutField } = loginData.credentials;
+        const response = await authApi.login(payloadWithoutField);
 
-  //       // 1. Check HTTP Status Code
-  //       expect(response.status()).toBe(expectedStatus);
+        expect(response.status()).toBe(expectedStatus);
 
-  //       // 2. Check Response Body cho các field bắt buộc (422)
-  //       if (!isOptional) {
-  //         const expectedError =
-  //           loginData.expectedResponses.fieldRequired(field);
-  //         await expect(response.json()).resolves.toMatchObject({
-  //           detail: expectedError.detail,
-  //         });
-  //       }
-  //     });
-  //   },
-  // );
+        if (!isOptional) {
+          await expect(response.json()).resolves.toMatchObject({
+            detail: [
+              {
+                type: "missing",
+                loc: ["body", field],
+              },
+            ],
+          });
+        }
+      });
+    }
+  );
+
+  // ------------------------------------------------------------------
+  // 6. FIELD VALUE VALIDATIONS (Email, Password & Login Type)
+  // ------------------------------------------------------------------
+  invalidValueCases.forEach(({ title, override, expectedStatus }, index) => {
+    const caseId = index + 26;
+
+    test(`Case ${caseId}: ${title}`, async () => {
+      const payload = { ...loginData.credentials, ...override };
+      const response = await authApi.login(payload);
+
+      expect(response.status()).toBe(expectedStatus);
+    });
+  });
 });
