@@ -1,5 +1,6 @@
 // src/api/login.api.js (hoặc src/api/auth.api.js)
 import { BaseAPI } from "./base.api.js";
+import { ENDPOINTS } from "../config/endpoint.js";
 
 export class AuthAPI extends BaseAPI {
   /**
@@ -7,7 +8,7 @@ export class AuthAPI extends BaseAPI {
    */
   constructor(request) {
     super(request);
-    this.loginEndpoint = "/api/v1/auth/login/";
+    this.loginEndpoint = ENDPOINTS.AUTH.LOGIN;
   }
 
   /**
@@ -16,14 +17,14 @@ export class AuthAPI extends BaseAPI {
    * @param {Object} [customHeaders] - Header tùy chỉnh (nếu có)
    */
   async login(payload, customHeaders) {
-
     // 1. Lấy headers mặc định từ BaseAPI
     const defaultHeaders = this.getHeaders();
 
     // 2. Gộp defaultHeaders và customHeaders (customHeaders sẽ đè lên nếu trùng tên key)
-    const headers = customHeaders !== undefined
-      ? { ...defaultHeaders, ...customHeaders }
-      : defaultHeaders;
+    const headers =
+      customHeaders !== undefined
+        ? { ...defaultHeaders, ...customHeaders }
+        : defaultHeaders;
     // const headers =
     //   customHeaders !== undefined ? customHeaders : this.getHeaders();
     return await this.post(this.loginEndpoint, payload, headers);

@@ -1,6 +1,7 @@
 import { test as base, expect } from "@playwright/test";
 import fs from "fs";
 import path from "path";
+import { ENDPOINTS } from "../config/endpoint.js";
 
 const authDir = path.join(process.cwd(), "tests", "auth");
 const authFile = path.join(authDir, "user.json");
@@ -82,7 +83,7 @@ async function getOrFetchToken(playwright) {
   console.log("Token not found! Executing auto-login...");
   const requestContext = await playwright.request.newContext();
 
-  const response = await requestContext.post("/api/v1/auth/login/", {
+  const response = await requestContext.post(ENDPOINTS.AUTH.LOGIN, {
     data: {
       email_user_id: "admin@admin.com",
       password: "!Ch4ng3Th1sP4ssW0rd!",
