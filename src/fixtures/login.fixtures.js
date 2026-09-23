@@ -85,9 +85,9 @@ async function getOrFetchToken(playwright) {
 
   const response = await requestContext.post(ENDPOINTS.AUTH.LOGIN, {
     data: {
-      email_user_id: "admin@admin.com",
-      password: "!Ch4ng3Th1sP4ssW0rd!",
-      login_type: 1,
+      email_user_id: env.ADMIN_EMAIL,
+      password: env.ADMIN_PASSWORD,
+      login_type: env.LOGIN_TYPE,
     },
   });
 
