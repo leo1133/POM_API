@@ -44,7 +44,7 @@ export default defineConfig({
     trace: "on-first-retry",
   },
   // Stop entire test run on first failure
-  maxFailures: 1,
+  // maxFailures: 1,
 
   /* Configure projects for major browsers */
   projects: [

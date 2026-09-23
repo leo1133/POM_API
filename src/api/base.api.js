@@ -13,26 +13,32 @@ export class BaseAPI {
     };
   }
 
-  async get(endpoint, headers) {
-    return await this.request.get(endpoint, { headers });
+  async get(endpoint, options = {}) {
+    return await this.request.get(endpoint, options);
   }
 
-  async post(endpoint, payload, headers) {
+  async post(endpoint, payload, options = {}) {
     return await this.request.post(endpoint, {
       data: payload,
-      headers,
+      ...options,
     });
   }
 
-  async put(endpoint, headers) {
-    return await this.request.put(endpoint, { headers });
+  async put(endpoint, payload, options = {}) {
+    return await this.request.put(endpoint, {
+      data: payload,
+      ...options,
+    });
   }
 
-  async patch(endpoint, headers) {
-    return await this.request.patch(endpoint, { headers });
+  async patch(endpoint, payload, options = {}) {
+    return await this.request.patch(endpoint, {
+      data: payload,
+      ...options,
+    });
   }
 
-  async delete(endpoint, headers) {
-    return await this.request.delete(endpoint, { headers });
+  async delete(endpoint, options = {}) {
+    return await this.request.delete(endpoint, options);
   }
 }

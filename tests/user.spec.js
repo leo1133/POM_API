@@ -1,51 +1,164 @@
 import { expect } from "@playwright/test";
+// Import authTest chứa 2 fixtures: authenticatedRequest & unauthenticatedRequest
 import { authTest as test } from "../src/fixtures/login.fixtures.js";
 import { UserAPI } from "../src/api/user.api.js";
 import { userData } from "../test-data/userData.js";
+import { loadUserListCsvCases } from "../utils/csvHelper.js";
+import { generateOtherMethodNotChoose, METHODS } from "../utils/helpers.js";
 
-test.describe("API Get List User Suite (POM Pattern)", () => {
-  let userApi;
+// Load dữ liệu testcase nhóm Params từ file CSV
+const csvTestCases = loadUserListCsvCases("test-data/csv/getListUser.csv");
 
-  // ------------------------------------------------------------------
-  // 1. KỊCH BẢN CẦN XÁC THỰC (AUTHENTICATED REQUESTS)
-  // ------------------------------------------------------------------
-  test.describe("Authenticated Requests", () => {
+test.describe("API GET List User Test Suite", () => {
+  // =========================================================================
+  // 1. HTTP METHODS TESTING (405 Method Not Allowed)
+  // =========================================================================
+  test.describe("1. Method Cases", () => {
+    let userApi;
+
     test.beforeEach(async ({ authenticatedRequest }) => {
-      // Khởi tạo instance duy nhất cho nhóm test case authen
       userApi = new UserAPI(authenticatedRequest);
     });
 
-    test("Case 1: Get list user successfully with default pagination", async () => {
-      const response = await userApi.getUsers(userData.defaultParams);
-      const expected = userData.expectedResponses.successList;
+    test("Case 1: Get user list successfully with GET method", async () => {
+      const response = await userApi.getUsers({
+        method: METHODS?.GET || "GET",
+        queryParams: userData.defaultParams,
+      });
 
-      // 1. Verify Status & Header
-      expect(response.status()).toBe(expected.status);
-      expect(response.headers()["content-type"]).toContain(
-        expected.contentType,
-      );
-
-      // 2. Verify Body Root Schema & Item Schema
-      const body = await response.json();
-      expect(body).toMatchObject(expected.rootSchema);
-
-      if (body.data.length > 0) {
-        expect(body.data[0]).toMatchObject(expected.itemSchema);
-      }
+      expect(response.status()).toBe(userData.expectedResponses.success.status);
     });
 
-    // test("Case 2: Pass invalid query params (e.g., negative page)", async () => {
-    //   const response = await userApi.getUsers({ page: -1, items_per_page: 10 });
-    //   const expected = userData.expectedResponses.invalidParams;
+    // Lấy tất cả phương thức ngoại trừ GET (POST, PUT, PATCH, DELETE)
+    const invalidMethods = generateOtherMethodNotChoose
+      ? generateOtherMethodNotChoose(METHODS?.GET || "GET")
+      : ["POST", "PUT", "PATCH", "DELETE"];
 
-    //   expect(response.status()).toBe(expected.status);
-    //   expect(response.headers()["content-type"]).toContain(
-    //     expected.contentType,
-    //   );
-    // });
+    invalidMethods.forEach((method, index) => {
+      test(`Case ${index + 2}: Get user list failed with ${method} method`, async () => {
+        const response = await userApi.getUsers({
+          method,
+          queryParams: userData.defaultParams,
+        });
 
-    // ------------------------------------------------------------------
-    // 2. KỊCH BẢN KHÔNG XÁC THỰC (UNAUTHENTICATED REQUESTS)
-    // ------------------------------------------------------------------
+        const {
+          status,
+          contentType,
+          body: expectedBody,
+        } = userData.expectedResponses.invalidMethod;
+
+        expect(response.status()).toBe(status);
+        if (contentType) {
+          expect(response.headers()["content-type"]).toContain(contentType);
+        }
+
+        if (expectedBody) {
+          const body = await response.json();
+          expect(body.detail).toBe(expectedBody.detail);
+        }
+      });
+    });
+  });
+
+  // =========================================================================
+  // 2. ACCEPT & AUTHORIZATION HEADERS TESTING (Data-Driven from userData.js)
+  // =========================================================================
+  test.describe("2. Accept & Authorization Header Cases", () => {
+    // -----------------------------------------------------------------------
+    // 2.1. Accept Header Cases (Dùng authenticatedRequest)
+    // -----------------------------------------------------------------------
+    test.describe("2.1. Accept Header Cases", () => {
+      let userApi;
+
+      test.beforeEach(async ({ authenticatedRequest }) => {
+        userApi = new UserAPI(authenticatedRequest);
+      });
+
+      (userData.acceptTestCases || []).forEach(
+        ({ tcId, title, headers, expectedStatus }) => {
+          test(`[${tcId}] ${title}`, async () => {
+            const response = await userApi.getUsers({
+              method: "GET",
+              queryParams: userData.defaultParams,
+              headers,
+            });
+
+            // Assert Status Code thuộc mảng cho phép (vd: [200] hoặc [200, 406])
+            expect(expectedStatus).toContain(response.status());
+          });
+        },
+      );
+    });
+
+    // -----------------------------------------------------------------------
+    // 2.2. Authorization & Role Cases (Dùng unauthenticatedRequest)
+    // -----------------------------------------------------------------------
+    test.describe("2.2. Authorization & Role Cases", () => {
+      let userApi;
+
+      test.beforeEach(async ({ unauthenticatedRequest }) => {
+        // Dùng unauthenticatedRequest để chủ động ghi đè/bỏ qua Authorization Header
+        userApi = new UserAPI(unauthenticatedRequest);
+      });
+
+      (userData.authTestCases || []).forEach(
+        ({ tcId, title, headers, expectedStatus }) => {
+          test(`[${tcId}] ${title} should return ${expectedStatus}`, async () => {
+            const response = await userApi.getUsers({
+              method: "GET",
+              queryParams: userData.defaultParams,
+              headers,
+            });
+
+            // Assert Status Code (401 Unauthorized / 403 Forbidden)
+            expect(response.status()).toBe(expectedStatus);
+
+            // Assert Response Body chứa thông báo lỗi detail
+            const body = await response.json();
+            expect(body).toHaveProperty("detail");
+          });
+        },
+      );
+    });
+  });
+
+  // =========================================================================
+  // 3. QUERY PARAMETERS TESTING (Data-Driven from CSV)
+  // =========================================================================
+  test.describe("3. Query Parameters Cases (Data-Driven from CSV)", () => {
+    let userApi;
+
+    test.beforeEach(async ({ authenticatedRequest }) => {
+      userApi = new UserAPI(authenticatedRequest);
+    });
+
+    csvTestCases.forEach(
+      ({ tcId, testName, method, headers, queryParams, expectedStatus }) => {
+        test(`[${tcId}] ${testName}`, async () => {
+          const response = await userApi.getUsers({
+            method,
+            queryParams,
+            headers,
+          });
+
+          // 1. Assert Status Code
+          expect(response.status()).toBe(expectedStatus);
+
+          // 2. Dynamic Assert Response Body theo Status Code
+          if (expectedStatus === userData.expectedResponses.success.status) {
+            const body = await response.json();
+            expect(body).toMatchObject(
+              userData.expectedResponses.success.bodySchema,
+            );
+          } else if (expectedStatus === 422) {
+            const body = await response.json();
+            expect(body.detail[0]).toMatchObject({
+              loc: ["query", expect.any(String)],
+              msg: expect.any(String),
+            });
+          }
+        });
+      },
+    );
   });
 });

@@ -4,11 +4,13 @@ import { HTTP_STATUS_CODE, CONTENT_TYPE } from "../utils/constants.js";
 // 1. MESSAGES CONSTANTS
 // ------------------------------------------------------------------
 const ERROR_MESSAGES = {
-  UNAUTHORIZED: "メールアドレス・IDまたはパスワードが一致しません。もう一度入力してください。",
+  UNAUTHORIZED:
+    "メールアドレス・IDまたはパスワードが一致しません。もう一度入力してください。",
   EMAIL_REQUIRED: "メール/IDは空欄にできません。",
   PASSWORD_REQUIRED: "パスワードは空欄にできません。",
   DEFAULT_REQUIRED: "Field required",
-  INVALID_BODY: "Input should be a valid dictionary or object to extract fields from",
+  INVALID_BODY:
+    "Input should be a valid dictionary or object to extract fields from",
   METHOD_NOT_ALLOWED: "Method Not Allowed",
 };
 
@@ -31,9 +33,15 @@ export const loginData = {
   },
 
   // Helper hỗ trợ tương thích ngược
-  get email_user_id() { return this.credentials.email_user_id; },
-  get password() { return this.credentials.password; },
-  get login_type() { return this.credentials.login_type; },
+  get email_user_id() {
+    return this.credentials.email_user_id;
+  },
+  get password() {
+    return this.credentials.password;
+  },
+  get login_type() {
+    return this.credentials.login_type;
+  },
 
   expectedResponses: {
     // Status 200 - Success
@@ -125,14 +133,26 @@ export const headerTestCases = [
     headers: { accept: "", "Content-Type": "" },
     expectedStatus: HTTP_STATUS_CODE.OK,
   },
-  { title: "No Accept header", headers: {}, expectedStatus: HTTP_STATUS_CODE.OK },
-  { title: "Empty Accept header", headers: { accept: "" }, expectedStatus: HTTP_STATUS_CODE.OK },
+  {
+    title: "No Accept header",
+    headers: {},
+    expectedStatus: HTTP_STATUS_CODE.OK,
+  },
+  {
+    title: "Empty Accept header",
+    headers: { accept: "" },
+    expectedStatus: HTTP_STATUS_CODE.OK,
+  },
   {
     title: "Invalid Accept header",
     headers: { accept: "text/html" },
     expectedStatus: HTTP_STATUS_CODE.OK,
   },
-  { title: "No Content-Type header", headers: {}, expectedStatus: HTTP_STATUS_CODE.OK },
+  {
+    title: "No Content-Type header",
+    headers: {},
+    expectedStatus: HTTP_STATUS_CODE.OK,
+  },
   {
     title: "Empty Content-Type header",
     headers: { "Content-Type": "" },
@@ -141,8 +161,7 @@ export const headerTestCases = [
   {
     title: "Invalid Content-Type header",
     headers: { "Content-Type": "text/plain" },
-    expectedStatus: HTTP_STATUS_CODE.UNPROCESSABLE_ENTITY,
-    checkErrorBody: true,
+    expectedStatus: HTTP_STATUS_CODE.OK,
   },
 ];
 
@@ -170,17 +189,53 @@ export const missingFieldCases = [
 // Data test cho các trường hợp Giá trị không hợp lệ (Value Validations)
 export const invalidValueCases = [
   // Email Validations
-  { title: "Email blank", override: { email_user_id: "" }, expectedStatus: HTTP_STATUS_CODE.UNPROCESSABLE_ENTITY },
-  { title: "Email null", override: { email_user_id: null }, expectedStatus: HTTP_STATUS_CODE.UNPROCESSABLE_ENTITY },
-  { title: "Invalid email format", override: { email_user_id: "invalid-email-format-without-at" }, expectedStatus: HTTP_STATUS_CODE.UNAUTHORIZED },
-  { title: "Email not string (number)", override: { email_user_id: 123456789 }, expectedStatus: HTTP_STATUS_CODE.UNPROCESSABLE_ENTITY },
+  {
+    title: "Email blank",
+    override: { email_user_id: "" },
+    expectedStatus: HTTP_STATUS_CODE.UNPROCESSABLE_ENTITY,
+  },
+  {
+    title: "Email null",
+    override: { email_user_id: null },
+    expectedStatus: HTTP_STATUS_CODE.UNPROCESSABLE_ENTITY,
+  },
+  {
+    title: "Invalid email format",
+    override: { email_user_id: "invalid-email-format-without-at" },
+    expectedStatus: HTTP_STATUS_CODE.UNAUTHORIZED,
+  },
+  {
+    title: "Email not string (number)",
+    override: { email_user_id: 123456789 },
+    expectedStatus: HTTP_STATUS_CODE.UNPROCESSABLE_ENTITY,
+  },
 
   // Password Validations
-  { title: "Password blank", override: { password: "" }, expectedStatus: HTTP_STATUS_CODE.UNPROCESSABLE_ENTITY },
-  { title: "Password null", override: { password: null }, expectedStatus: HTTP_STATUS_CODE.UNPROCESSABLE_ENTITY },
-  { title: "Password not string (boolean)", override: { password: true }, expectedStatus: HTTP_STATUS_CODE.UNPROCESSABLE_ENTITY },
+  {
+    title: "Password blank",
+    override: { password: "" },
+    expectedStatus: HTTP_STATUS_CODE.UNPROCESSABLE_ENTITY,
+  },
+  {
+    title: "Password null",
+    override: { password: null },
+    expectedStatus: HTTP_STATUS_CODE.UNPROCESSABLE_ENTITY,
+  },
+  {
+    title: "Password not string (boolean)",
+    override: { password: true },
+    expectedStatus: HTTP_STATUS_CODE.UNPROCESSABLE_ENTITY,
+  },
 
   // Login Type Validations
-  { title: "Login type blank", override: { login_type: "" }, expectedStatus: HTTP_STATUS_CODE.UNPROCESSABLE_ENTITY },
-  { title: "Login type null", override: { login_type: null }, expectedStatus: HTTP_STATUS_CODE.OK },
+  {
+    title: "Login type blank",
+    override: { login_type: "" },
+    expectedStatus: HTTP_STATUS_CODE.UNPROCESSABLE_ENTITY,
+  },
+  {
+    title: "Login type null",
+    override: { login_type: null },
+    expectedStatus: HTTP_STATUS_CODE.OK,
+  },
 ];

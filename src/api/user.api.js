@@ -1,36 +1,38 @@
-import { BaseAPI } from "./base.api.js";
-import { ENDPOINTS } from "../config/endpoint.js";
-
-export class UserAPI extends BaseAPI {
+// src/api/user.api.js
+export class UserAPI {
+  /**
+   * @param {import('@playwright/test').APIRequestContext} request
+   */
   constructor(request) {
-    super(request);
-    this.userEndpoint = ENDPOINTS.USER.GET_LIST;
+    this.request = request;
+    this.userEndpoint = "/api/v1/user/";
   }
 
   /**
-   * Lấy danh sách User
-   * @param {Object} [params] Query parameters (page, items_per_page, sort_field, sort_order)
-   * @param {Object} [customHeaders] Header tùy chỉnh nếu muốn override
+   * Gọi API Get List User linh hoạt theo Method, Params và Headers
    */
-  async getUsers(params = {}, customHeaders) {
-    const defaultHeaders = this.getHeaders();
-    const headers =
-      customHeaders !== undefined
-        ? { ...defaultHeaders, ...customHeaders }
-        : defaultHeaders;
-
-    // Gán tham số mặc định theo cURL nếu người dùng không truyền vào
-    const queryParams = {
-      page: 1,
-      items_per_page: 10,
-      sort_field: "id",
-      sort_order: "desc",
-      ...params,
-    };
-
-    return await this.get(this.userEndpoint, {
+  async getUsers({ method = "GET", queryParams = {}, headers = {} }) {
+    const options = {
       headers,
       params: queryParams,
-    });
+    };
+
+    const httpMethod = method.toUpperCase();
+
+    switch (httpMethod) {
+      case "GET":
+        return await this.request.get(this.userEndpoint, options);
+      case "POST":
+        return await this.request.post(this.userEndpoint, options);
+      case "PUT":
+        return await this.request.put(this.userEndpoint, options);
+      case "DELETE":
+        return await this.request.delete(this.userEndpoint, options);
+      default:
+        return await this.request.fetch(this.userEndpoint, {
+          ...options,
+          method: httpMethod,
+        });
+    }
   }
 }
