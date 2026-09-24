@@ -1,10 +1,14 @@
 import { test as base, expect } from "@playwright/test";
 import fs from "fs";
 import path from "path";
+import dotenv from "dotenv";
 import { ENDPOINTS } from "../config/endpoint.js";
 
+const ENV = process.env.ENV || "dev";
+dotenv.config({ path: path.resolve(process.cwd(), `.env.${ENV}`) });
+
 const authDir = path.join(process.cwd(), "tests", "auth");
-const authFile = path.join(authDir, "user.json");
+const authFile = path.join(authDir, `user_${ENV}.json`);
 
 // 1. CustomApiClient Wrapper Class
 export class CustomApiClient {
@@ -85,9 +89,9 @@ async function getOrFetchToken(playwright) {
 
   const response = await requestContext.post(ENDPOINTS.AUTH.LOGIN, {
     data: {
-      email_user_id: env.ADMIN_EMAIL,
-      password: env.ADMIN_PASSWORD,
-      login_type: env.LOGIN_TYPE,
+      email_user_id: process.env.email_user_id, // Đổi thành email_user_id
+      password: process.env.password,           // Đổi thành password
+      login_type: process.env.login_type ? parseInt(process.env.login_type, 10) : 1,
     },
   });
 

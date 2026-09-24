@@ -1,11 +1,11 @@
-// src/api/user.api.js
+import { ENDPOINTS } from "../config/endpoint.js";
 export class UserAPI {
   /**
    * @param {import('@playwright/test').APIRequestContext} request
    */
   constructor(request) {
     this.request = request;
-    this.userEndpoint = "/api/v1/user/";
+    this.userEndpoint = ENDPOINTS.USER.GET_LIST;
   }
 
   /**

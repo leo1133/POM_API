@@ -2,10 +2,10 @@
 import { expect } from "@playwright/test";
 import { HTTP_STATUS_CODE, CONTENT_TYPE } from "../utils/constants.js";
 
+// Thông báo lỗi chuẩn từ Server
 export const ERROR_MESSAGES = {
   PAGE_MIN: "UserListRequest.pageは1以上の値を入力してください。",
-  ITEMS_PER_PAGE_MIN:
-    "UserListRequest.items_per_pageは1以上の値を入力してください。",
+  ITEMS_PER_PAGE_MIN: "UserListRequest.items_per_pageは1以上の値を入力してください。",
   INVALID_BOOLEAN: "value is not a valid boolean",
   INVALID_ENUM: "value is not a valid enumeration member",
   UNAUTHORIZED: "Not authenticated",
@@ -14,7 +14,7 @@ export const ERROR_MESSAGES = {
 };
 
 export const userData = {
-  // Query parameters chuẩn mặc định từ cURL
+  // Query parameters mặc định cho API Get List User
   defaultParams: {
     page: 1,
     items_per_page: 10,
@@ -27,13 +27,15 @@ export const userData = {
     can_livestream: true,
   },
 
-  // Token mẫu dùng cho các kịch bản test đặc thù
+  // Token mẫu dùng cho các kịch bản test đặc thù (Ưu tiên đọc từ .env)
   testTokens: {
     expiredToken:
+      process.env.TEST_EXPIRED_TOKEN ||
       "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2MDA0MDAwMDB9.invalid_sig",
-    invalidToken: "Bearer_invalid_12345_format",
+    invalidToken: "invalid_bearer_format_12345",
     nonAdminToken:
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoidXNlciJ9.invalid_sig",
+      process.env.NON_ADMIN_TOKEN ||
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.mock_non_admin_payload.mock_signature",
   },
 
   // =========================================================================
@@ -42,89 +44,82 @@ export const userData = {
   acceptTestCases: [
     {
       tcId: "TC_HEADER_01",
-      title: "No header",
+      title: "No header / Default headers",
       headers: {},
-      expectedStatus: [200],
+      expectedStatus: [HTTP_STATUS_CODE.OK],
     },
     {
       tcId: "TC_HEADER_02",
-      title: "Empty header",
-      headers: {},
-      expectedStatus: [200],
+      title: "No Accept header (With Content-Type)",
+      headers: { "Content-Type": CONTENT_TYPE.JSON },
+      expectedStatus: [HTTP_STATUS_CODE.OK],
     },
     {
       tcId: "TC_HEADER_03",
-      title: "No accept header",
-      headers: { "Content-Type": "application/json" },
-      expectedStatus: [200],
+      title: "Empty Accept header",
+      headers: { Accept: "" },
+      expectedStatus: [HTTP_STATUS_CODE.OK],
     },
     {
       tcId: "TC_HEADER_04",
-      title: "Empty accept header",
-      headers: { Accept: "" },
-      expectedStatus: [200],
-    },
-    {
-      tcId: "TC_HEADER_05",
-      title: "Invalid value accept (e.g. application/xml)",
+      title: "Unsupported Accept header (application/xml)",
       headers: { Accept: "application/xml" },
-      expectedStatus: [200, 406], // 200 nếu server bỏ qua Accept, 406 nếu validate nghiêm ngặt
+      expectedStatus: [HTTP_STATUS_CODE.OK, HTTP_STATUS_CODE.NOT_ACCEPTABLE || 406],
     },
   ],
 
   // =========================================================================
   // 2. AUTHORIZATION & ROLE TEST CASES
   // =========================================================================
-  authTestCases: [
-    {
-      tcId: "TC_AUTH_01",
-      title: "No Authorization",
-      headers: {},
-      expectedStatus: HTTP_STATUS_CODE?.UNAUTHORIZED || 401,
-    },
-    {
-      tcId: "TC_AUTH_02",
-      title: "Empty Authorization",
-      headers: { Authorization: "" },
-      expectedStatus: HTTP_STATUS_CODE?.UNAUTHORIZED || 401,
-    },
-    {
-      tcId: "TC_AUTH_03",
-      title: "Invalid value Authorization (Not Bearer format)",
-      headers: { Authorization: "Basic invalid_format_123" },
-      expectedStatus: HTTP_STATUS_CODE?.UNAUTHORIZED || 401,
-    },
-    {
-      tcId: "TC_AUTH_04",
-      title: "Authorization is not correct (Malformed / Fake signature)",
-      headers: {
-        Authorization: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.fake.fake",
+  get authTestCases() {
+    return [
+      {
+        tcId: "TC_AUTH_01",
+        title: "No Authorization header",
+        headers: {},
+        expectedStatus: HTTP_STATUS_CODE.UNAUTHORIZED,
       },
-      expectedStatus: HTTP_STATUS_CODE?.UNAUTHORIZED || 401,
-    },
-    {
-      tcId: "TC_AUTH_05",
-      title: "Authorization is expired",
-      headers: {
-        Authorization:
-          "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2MDA0MDAwMDB9.invalid_sig",
+      {
+        tcId: "TC_AUTH_02",
+        title: "Empty Authorization header",
+        headers: { Authorization: "" },
+        expectedStatus: HTTP_STATUS_CODE.UNAUTHORIZED,
       },
-      expectedStatus: HTTP_STATUS_CODE?.UNAUTHORIZED || 401,
-    },
-    {
-      tcId: "TC_AUTH_06",
-      title: "Authorization is not [admin]",
-      headers: { Authorization: "Bearer user_token_without_admin_role" },
-      expectedStatus: HTTP_STATUS_CODE?.FORBIDDEN || 403,
-    },
-  ],
+      {
+        tcId: "TC_AUTH_03",
+        title: "Invalid Authorization format (Not Bearer)",
+        headers: { Authorization: "Basic invalid_format_123" },
+        expectedStatus: HTTP_STATUS_CODE.UNAUTHORIZED,
+      },
+      {
+        tcId: "TC_AUTH_04",
+        title: "Malformed / Invalid JWT Token",
+        headers: { Authorization: `Bearer ${this.testTokens.invalidToken}` },
+        expectedStatus: HTTP_STATUS_CODE.UNAUTHORIZED,
+      },
+      {
+        tcId: "TC_AUTH_05",
+        title: "Expired JWT Token",
+        headers: { Authorization: `Bearer ${this.testTokens.expiredToken}` },
+        expectedStatus: HTTP_STATUS_CODE.UNAUTHORIZED,
+      },
+      {
+        tcId: "TC_AUTH_06",
+        title: "Non-Admin role access",
+        headers: { Authorization: `Bearer ${this.testTokens.nonAdminToken}` },
+        expectedStatus: HTTP_STATUS_CODE.UNAUTHORIZED,
+      },
+    ];
+  },
 
-  // Quản lý tập trung Status, Content-Type & Body Schema kỳ vọng
+  // =========================================================================
+  // 3. EXPECTED RESPONSES SCHEMA & HELPERS
+  // =========================================================================
   expectedResponses: {
     // Status 200 - OK
     success: {
-      status: HTTP_STATUS_CODE?.OK || 200,
-      contentType: CONTENT_TYPE?.JSON || "application/json",
+      status: HTTP_STATUS_CODE.OK,
+      contentType: CONTENT_TYPE.JSON,
       bodySchema: {
         page: expect.any(Number),
         items_per_page: expect.any(Number),
@@ -134,55 +129,39 @@ export const userData = {
 
     // Status 401 - Unauthorized
     unauthorized: {
-      status: HTTP_STATUS_CODE?.UNAUTHORIZED || 401,
-      contentType: CONTENT_TYPE?.JSON || "application/json",
-      body: {
-        detail: ERROR_MESSAGES.UNAUTHORIZED,
-      },
+      status: HTTP_STATUS_CODE.UNAUTHORIZED,
+      contentType: CONTENT_TYPE.JSON,
+      body: { detail: ERROR_MESSAGES.UNAUTHORIZED },
     },
 
     // Status 403 - Forbidden
     forbidden: {
-      status: HTTP_STATUS_CODE?.FORBIDDEN || 403,
-      contentType: CONTENT_TYPE?.JSON || "application/json",
-      body: {
-        detail: ERROR_MESSAGES.FORBIDDEN,
-      },
+      status: HTTP_STATUS_CODE.FORBIDDEN,
+      contentType: CONTENT_TYPE.JSON,
+      body: { detail: ERROR_MESSAGES.FORBIDDEN },
     },
 
     // Status 405 - Method Not Allowed
     invalidMethod: {
-      status: HTTP_STATUS_CODE?.METHOD_NOT_ALLOWED || 405,
-      contentType: CONTENT_TYPE?.JSON || "application/json",
-      body: {
-        detail: ERROR_MESSAGES.METHOD_NOT_ALLOWED,
-      },
+      status: HTTP_STATUS_CODE.METHOD_NOT_ALLOWED,
+      contentType: CONTENT_TYPE.JSON,
+      body: { detail: ERROR_MESSAGES.METHOD_NOT_ALLOWED },
     },
 
-    // Status 422 - Param Validation Error
+    // Status 422 - Param Validation Error Generator
     getParamErrorResponse: (paramName, overrideMsg = null) => {
-      let expectedMsg = overrideMsg;
-
-      if (!expectedMsg) {
-        switch (paramName) {
-          case "page":
-            expectedMsg = ERROR_MESSAGES.PAGE_MIN;
-            break;
-          case "items_per_page":
-            expectedMsg = ERROR_MESSAGES.ITEMS_PER_PAGE_MIN;
-            break;
-          default:
-            expectedMsg = expect.any(String);
-        }
-      }
+      const errorMap = {
+        page: ERROR_MESSAGES.PAGE_MIN,
+        items_per_page: ERROR_MESSAGES.ITEMS_PER_PAGE_MIN,
+      };
 
       return {
-        status: HTTP_STATUS_CODE?.UNPROCESSABLE_ENTITY || 422,
-        contentType: CONTENT_TYPE?.JSON || "application/json",
+        status: HTTP_STATUS_CODE.UNPROCESSABLE_ENTITY || 422,
+        contentType: CONTENT_TYPE.JSON,
         detail: [
           {
             loc: ["query", paramName],
-            msg: expectedMsg,
+            msg: overrideMsg || errorMap[paramName] || expect.any(String),
           },
         ],
       };
