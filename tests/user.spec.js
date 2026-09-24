@@ -1,10 +1,10 @@
 import { expect } from "@playwright/test";
-// Import authTest chứa 2 fixtures: authenticatedRequest & unauthenticatedRequest
 import { authTest as test } from "../src/fixtures/login.fixtures.js";
 import { UserAPI } from "../src/api/user.api.js";
 import { userData } from "../test-data/userData.js";
 import { loadUserListCsvCases } from "../utils/csvHelper.js";
-import { generateOtherMethodNotChoose, METHODS } from "../utils/helpers.js";
+import { METHODS } from "../utils/constants.js";
+import { generateOtherMethodNotChoose } from "../utils/helpers.js";
 
 // Load dữ liệu testcase nhóm Params từ file CSV
 const csvTestCases = loadUserListCsvCases("test-data/csv/getListUser.csv");
@@ -20,19 +20,18 @@ test.describe("API GET List User Test Suite", () => {
       userApi = new UserAPI(authenticatedRequest);
     });
 
+    // Case Happy Path: Phương thức GET chuẩn
     test("Case 1: Get user list successfully with GET method", async () => {
       const response = await userApi.getUsers({
-        method: METHODS?.GET || "GET",
+        method: "GET",
         queryParams: userData.defaultParams,
       });
 
       expect(response.status()).toBe(userData.expectedResponses.success.status);
     });
 
-    // Lấy tất cả phương thức ngoại trừ GET (POST, PUT, PATCH, DELETE)
-    const invalidMethods = generateOtherMethodNotChoose
-      ? generateOtherMethodNotChoose(METHODS?.GET || "GET")
-      : ["POST", "PUT", "PATCH", "DELETE"];
+    // Sinh ra các phương thức không hợp lệ (POST, PUT, PATCH, DELETE)
+    const invalidMethods = generateOtherMethodNotChoose(METHODS.GET);
 
     invalidMethods.forEach((method, index) => {
       test(`Case ${index + 2}: Get user list failed with ${method} method`, async () => {
@@ -41,17 +40,14 @@ test.describe("API GET List User Test Suite", () => {
           queryParams: userData.defaultParams,
         });
 
-        const {
-          status,
-          contentType,
-          body: expectedBody,
-        } = userData.expectedResponses.invalidMethod;
+        const { status, contentType, body: expectedBody } =
+          userData.expectedResponses.invalidMethod;
 
+        // Verify Status Code, Content-Type Header và Detail Message
         expect(response.status()).toBe(status);
         if (contentType) {
           expect(response.headers()["content-type"]).toContain(contentType);
         }
-
         if (expectedBody) {
           const body = await response.json();
           expect(body.detail).toBe(expectedBody.detail);
