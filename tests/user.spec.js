@@ -13,15 +13,117 @@ test.describe("API GET List User Test Suite", () => {
   // =========================================================================
   // 1. HAPPY PATH TEST SUITE (Kiểm thử chức năng chính + DB Verification)
   // =========================================================================
+  // test.describe("1. Happy Path Cases", () => {
+  //   let userApi;
+
+  //   test.beforeEach(async ({ authenticatedRequest }) => {
+  //     userApi = new UserAPI(authenticatedRequest); // cite: 1
+  //   });
+
+  //   test("Get user list successfully and verify full integrity (Schema, Pagination, DB)", async ({
+  //     db,
+  //   }) => {
+  //     const queryParams = userData.defaultParams; // cite: 1
+
+  //     // Call API
+  //     const response = await userApi.getUsers({
+  //       method: METHODS.GET,
+  //       queryParams: queryParams,
+  //     });
+
+  //     // 1. Assert Status & Content-Type Header
+  //     expect(response.status()).toBe(userData.expectedResponses.success.status); // cite: 1
+  //     expect(response.headers()["content-type"]).toContain("application/json");
+
+  //     const body = await response.json();
+
+  //     // 2. Assert Phân trang & Số lượng
+  //     expect(body).toMatchObject({
+  //       page: queryParams.page,
+  //       items_per_page: queryParams.items_per_page,
+  //       total_count: expect.any(Number),
+  //       has_more: expect.any(Boolean),
+  //       data: expect.any(Array),
+  //     });
+  //     expect(body.data.length).toBeGreaterThan(0);
+  //     expect(body.data.length).toBeLessThanOrEqual(queryParams.items_per_page);
+
+  //     // 3. Chọn 1 user ngẫu nhiên trong mảng trả về để kiểm tra Schema & DB
+  //     const randomIndex = Math.floor(Math.random() * body.data.length);
+  //     const apiUser = body.data[randomIndex];
+
+  //     // Assert Cấu trúc & Kiểu dữ liệu (Schema) của user được chọn
+  //     expect(apiUser).toMatchObject({
+  //       user_id: expect.any(Number),
+  //       user_uid: expect.any(String),
+  //       user_name: expect.any(String),
+  //       agency_id: expect.any(Number),
+  //       agency_name: expect.any(String),
+  //       streamer_type: expect.any(Number),
+  //       agency_status: expect.any(Number),
+  //       created_at: expect.any(String),
+  //       last_login_at: expect.any(String),
+  //       last_livestream_at: expect.any(String),
+  //       status: expect.any(Number),
+  //       can_livestream: expect.any(Boolean),
+  //       following_count: expect.any(Number),
+  //       follower_count: expect.any(Number),
+  //       familia_member_count: expect.any(Number),
+  //       livestream_like_count: expect.any(Number),
+  //       livestream_duration: expect.any(Number),
+  //       normal_livestream_duration: expect.any(Number),
+  //       two_shot_livestream_duration: expect.any(Number),
+  //       familia_livestream_duration: expect.any(Number),
+  //       karaoke_livestream_duration: expect.any(Number),
+  //       broadcast_livestream_duration: expect.any(Number),
+  //       obs_livestream_duration: expect.any(Number),
+  //       point_sales: expect.any(Number),
+  //       two_shot_sales: expect.any(Number),
+  //       gift_sales: expect.any(Number),
+  //       whisper_sales: expect.any(Number),
+  //       yell_sales: expect.any(Number),
+  //       familia_sales: expect.any(Number),
+  //       total_sales: expect.any(Number),
+  //       ekyc_status: expect.any(Number),
+  //       ocr_status: expect.any(Number),
+  //     });
+
+  //     // 4. Assert Dữ liệu thực tế với PostgreSQL Database
+  //     const dbQuery = `
+  //       SELECT
+  //         id, uid, name, status, streamer_type, can_livestream,
+  //         following_count, follower_count, livestream_duration,
+  //         point_sales, gift_sales, total_sales,
+  //         ekyc_status, ocr_status, created_at
+  //       FROM users
+  //       WHERE id = $1
+  //     `;
+  //     const dbResult = await db.query(dbQuery, [apiUser.user_id]);
+  //     const dbUser = dbResult.rows[0];
+
+  //     expect(dbUser).toBeDefined();
+  //     expect(apiUser.user_id).toBe(Number(dbUser.id));
+  //     expect(apiUser.user_uid).toBe(dbUser.uid);
+  //     expect(apiUser.user_name).toBe(dbUser.name);
+  //     expect(apiUser.status).toBe(dbUser.status);
+  //     expect(apiUser.can_livestream).toBe(dbUser.can_livestream);
+  //     expect(apiUser.following_count).toBe(Number(dbUser.following_count));
+  //     expect(apiUser.follower_count).toBe(Number(dbUser.follower_count));
+  //     expect(apiUser.total_sales).toBe(Number(dbUser.total_sales));
+  //     expect(new Date(apiUser.created_at).getTime()).toBe(
+  //       new Date(dbUser.created_at).getTime(),
+  //     );
+  //   });
+
   test.describe("1. Happy Path Cases", () => {
     let userApi;
 
     test.beforeEach(async ({ authenticatedRequest }) => {
-      userApi = new UserAPI(authenticatedRequest); // cite: 1
+      userApi = new UserAPI(authenticatedRequest);
     });
 
-    test("Get user list successfully and verify full integrity (Schema, Pagination, DB)", async ({ db }) => {
-      const queryParams = userData.defaultParams; // cite: 1
+    test("Get user list successfully and verify full integrity (Schema, Pagination)", async () => {
+      const queryParams = userData.defaultParams;
 
       // Call API
       const response = await userApi.getUsers({
@@ -30,7 +132,7 @@ test.describe("API GET List User Test Suite", () => {
       });
 
       // 1. Assert Status & Content-Type Header
-      expect(response.status()).toBe(userData.expectedResponses.success.status); // cite: 1
+      expect(response.status()).toBe(userData.expectedResponses.success.status);
       expect(response.headers()["content-type"]).toContain("application/json");
 
       const body = await response.json();
@@ -45,72 +147,6 @@ test.describe("API GET List User Test Suite", () => {
       });
       expect(body.data.length).toBeGreaterThan(0);
       expect(body.data.length).toBeLessThanOrEqual(queryParams.items_per_page);
-
-      // 3. Chọn 1 user ngẫu nhiên trong mảng trả về để kiểm tra Schema & DB
-      const randomIndex = Math.floor(Math.random() * body.data.length);
-      const apiUser = body.data[randomIndex];
-
-      // Assert Cấu trúc & Kiểu dữ liệu (Schema) của user được chọn
-      expect(apiUser).toMatchObject({
-        user_id: expect.any(Number),
-        user_uid: expect.any(String),
-        user_name: expect.any(String),
-        agency_id: expect.any(Number),
-        agency_name: expect.any(String),
-        streamer_type: expect.any(Number),
-        agency_status: expect.any(Number),
-        created_at: expect.any(String),
-        last_login_at: expect.any(String),
-        last_livestream_at: expect.any(String),
-        status: expect.any(Number),
-        can_livestream: expect.any(Boolean),
-        following_count: expect.any(Number),
-        follower_count: expect.any(Number),
-        familia_member_count: expect.any(Number),
-        livestream_like_count: expect.any(Number),
-        livestream_duration: expect.any(Number),
-        normal_livestream_duration: expect.any(Number),
-        two_shot_livestream_duration: expect.any(Number),
-        familia_livestream_duration: expect.any(Number),
-        karaoke_livestream_duration: expect.any(Number),
-        broadcast_livestream_duration: expect.any(Number),
-        obs_livestream_duration: expect.any(Number),
-        point_sales: expect.any(Number),
-        two_shot_sales: expect.any(Number),
-        gift_sales: expect.any(Number),
-        whisper_sales: expect.any(Number),
-        yell_sales: expect.any(Number),
-        familia_sales: expect.any(Number),
-        total_sales: expect.any(Number),
-        ekyc_status: expect.any(Number),
-        ocr_status: expect.any(Number),
-      });
-
-      // 4. Assert Dữ liệu thực tế với PostgreSQL Database
-      const dbQuery = `
-        SELECT 
-          id, uid, name, status, streamer_type, can_livestream,
-          following_count, follower_count, livestream_duration,
-          point_sales, gift_sales, total_sales,
-          ekyc_status, ocr_status, created_at
-        FROM users 
-        WHERE id = $1
-      `;
-      const dbResult = await db.query(dbQuery, [apiUser.user_id]);
-      const dbUser = dbResult.rows[0];
-
-      expect(dbUser).toBeDefined();
-      expect(apiUser.user_id).toBe(Number(dbUser.id));
-      expect(apiUser.user_uid).toBe(dbUser.uid);
-      expect(apiUser.user_name).toBe(dbUser.name);
-      expect(apiUser.status).toBe(dbUser.status);
-      expect(apiUser.can_livestream).toBe(dbUser.can_livestream);
-      expect(apiUser.following_count).toBe(Number(dbUser.following_count));
-      expect(apiUser.follower_count).toBe(Number(dbUser.follower_count));
-      expect(apiUser.total_sales).toBe(Number(dbUser.total_sales));
-      expect(new Date(apiUser.created_at).getTime()).toBe(
-        new Date(dbUser.created_at).getTime()
-      );
     });
   });
 
@@ -134,8 +170,11 @@ test.describe("API GET List User Test Suite", () => {
           queryParams: userData.defaultParams, // cite: 1
         });
 
-        const { status, contentType, body: expectedBody } =
-          userData.expectedResponses.invalidMethod; // cite: 1
+        const {
+          status,
+          contentType,
+          body: expectedBody,
+        } = userData.expectedResponses.invalidMethod; // cite: 1
 
         // Verify Status Code, Content-Type Header và Message detail
         expect(response.status()).toBe(status); // cite: 1
